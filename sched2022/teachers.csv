@@ -1,0 +1,25 @@
+teacher,day-of-week,period-begin,period-end,room,class,section
+PDK,Mon,1,1,Media Center,Duty,0
+PDK,Mon,2,2,N315,CP Physics,2
+PDK,Mon,4,4,N315,CP Physics,4
+PDK,Mon,6,6,N315,CP Physics,6
+PDK,Mon,8,8,N315,CP Physics,8
+PDK,Tue,1,1,Media Center,Duty,0
+PDK,Tue,2,2,N315,CP Physics,2
+PDK,Tue,4,4,N315,CP Physics,4
+PDK,Tue,6,6,N315,CP Physics,6
+PDK,Tue,7,8,N313,CP Physics,8
+PDK,Wed,1,1,Media Center,Duty,0
+PDK,Wed,2,2,N315,CP Physics,2
+PDK,Wed,4,4,N315,CP Physics,4
+PDK,Wed,5,6,N313,CP Physics,6
+PDK,Wed,8,8,N315,CP Physics,8
+PDK,Thurs,1,1,Media Center,Duty,0
+PDK,Thurs,2,2,N315,CP Physics,2
+PDK,Thurs,3,4,N313,CP Physics,4
+PDK,Thurs,6,6,N315,CP Physics,6
+PDK,Thurs,8,8,N315,CP Physics,8
+PDK,Fri,1,2,N313,CP Physics,2
+PDK,Fri,4,4,N315,CP Physics,4
+PDK,Fri,6,6,N315,CP Physics,6
+PDK,Fri,8,8,N315,CP Physics,8

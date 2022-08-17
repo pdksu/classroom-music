@@ -1,0 +1,14 @@
+#  configuration for music player program
+#
+# --- structure ---
+#   directory: location of files
+#   objects: list of csv files in the directory
+#       class name: file name
+#   merge: file name containing sql to perform the merge that will generate a schedule 
+directory: sched2022
+objects:
+    bells: bells.csv
+    teachers: teachers.csv
+    classes: class.csv
+    music: music.csv
+merge: smerge.txt

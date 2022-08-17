@@ -1,0 +1,3 @@
+schedule,period,start-time,end-time
+regular,0,7:30,7:40
+regular,1,7:45,8:15
