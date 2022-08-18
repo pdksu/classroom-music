@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import csv, sqlite3, yaml
 from time import strptime
 from typing import OrderedDict
