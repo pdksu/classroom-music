@@ -124,7 +124,10 @@ class Sched_db:
         bellTime = bell['classDismissTime'] if bell['end'] else bell['classTime']
         bellOffset = timedelta(minutes=(-1 if bell['end'] else 1) * bell['offset'])
         print(f"BELL DEBUG {bell['date']}, {bellTime}, {bellOffset} ===")
-        bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M") + bellOffset
+        try:
+            bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M") + bellOffset
+        except TypeError:
+            return None
         return bellDate
 
 
@@ -148,7 +151,8 @@ def playDate(date : str, dB : Sched_db, testonly=False):
     empty_cron()
     for bell in dB.dayBells(date):
         bell['datetime'] = dB.bellTime(bell)
-        schedule_bell(bell, testonly=testonly)
+        if bell['datetime']:
+            schedule_bell(bell, testonly=testonly)
 
 def show_cron():
     with CronTab(user="root") as cron:
