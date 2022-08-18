@@ -186,7 +186,7 @@ def run(args=getargs(), testonly=False):
         for bell in bells:
             bell['datetime'] = s.bellTime(bell)
             schedule_bell(bell, testonly=args.test)
-    if args.cron:
+    if args.cronList:
         show_cron()
 
 
