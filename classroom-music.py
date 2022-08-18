@@ -129,7 +129,7 @@ def empty_cron():
 
 def playDate(date : dt.date, dB : Sched_db, testonly=False):
     empty_cron()
-    for bell in dB.dayBells(date):
+    for bell in dB.dayBells(dt.strftime(date,"%-m/-%d/%Y")):
         bell['datetime'] = dB.bellTime(bell)
         schedule_bell(bell, testonly=testonly)
     
