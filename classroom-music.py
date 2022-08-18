@@ -107,7 +107,7 @@ class Sched_db:
     def bellTime(self, bell):
         bellTime = bell['classDismissTime'] if bell['end'] else bell['classTime']
         bellOffset = timedelta(minutes=(-1 if bell['end'] else 1) * bell['offset'])
-        bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M:%S") + bellOffset
+        bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M") + bellOffset
         return bellDate
 
 
