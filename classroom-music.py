@@ -69,6 +69,7 @@ class Sched_db:
         self.cursor = cur
         y = yaml.safe_load_all(Path(f_yaml).read_text()).__next__()
         self.dir = y['directory']
+        self.music_dir = y['music']
         self.files = y['objects']
         self.script = y['merge']
         for t, f in self.files.items():
@@ -113,7 +114,8 @@ class Sched_db:
         rows = self.cursor.fetchall()
         # -- WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
         rows = [{'date':row[0], 'classTime':row[1], 'classDismissTime':row[2],
-                 'offset':row[3],'end':bool(row[4]), 'signal':row[5], 'file': row[6],
+                 'offset':row[3],'end':bool(row[4]), 'signal':row[5], 
+                 'file': Path(self.muisc_dir,row[6]),
                  'period':row[7], 'cName':row[8], 'section':row[9],'lesson':row[10]} 
                         for row in rows]
         return(rows)
@@ -136,7 +138,7 @@ def schedule_bell(bell, testonly=False):
 
 def empty_cron():
     with CronTab(user="root") as cron:
-        vlcJobs = cron.find_command("cvlc")
+        vlcJobs = cron.find_command("vlc")
         for job in vlcJobs:
             cron.remove(job)
         cron.write()

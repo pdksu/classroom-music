@@ -6,6 +6,7 @@
 #       class name: file name
 #   merge: file name containing sql to perform the merge that will generate a schedule 
 directory: sched2022
+music: /home/pi/Music
 objects:
     bells: bells.csv
     teachers: teachers.csv
