@@ -43,7 +43,7 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
                         try:
                             vout = f(row[k])
                             break
-                        except ValueError, TypeError:
+                        except ValueError:
                             pass
                     dtypes[k] = Dt
                     create_command += f"{k}  {Dt}, "
