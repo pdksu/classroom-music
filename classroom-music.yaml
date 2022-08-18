@@ -11,4 +11,5 @@ objects:
     teachers: teachers.csv
     classes: class.csv
     music: music.csv
+    calendar: Clifton2022_calendar.csv
 merge: smerge.txt

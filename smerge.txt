@@ -1,0 +1,11 @@
+SELECT c.Date, t.periodBegin, b.startTime, t.class, t.section, l.lessontype, l.signal, l.dt, l.end, m.music 
+    FROM calendar as c 
+    CROSS JOIN teachers as t
+        ON c.DAY = t.weekDay
+    LEFT JOIN bells as b 
+        ON c.schedule = b.schedule AND t.periodBegin = b.period
+    CROSS JOIN classes as l 
+        ON l.cname = t.class
+    LEFT JOIN music as m 
+        ON l.signal = m.signal AND l.cname = m.cname
+    WHERE c.DATE = "9/8/2022";

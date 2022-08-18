@@ -43,6 +43,10 @@ All these files can be managed by hand, all are `.csv`.
 
 `class name, lesson category, bell name, music fname`
 
+### calendar `calendar.csv`
+
+`date, bell schedule`
+
 ## usage
 
 ```
