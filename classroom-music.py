@@ -1,3 +1,4 @@
+from crontab import CronTab
 import csv, sqlite3, yaml
 from datetime import datetime as dt
 from datetime import timedelta
@@ -19,7 +20,7 @@ def def_ok(x):
 SQLtypes = OrderedDict({'INTEGER' : int, 'REAL' : float, 'DATE' : cdate, 'TIME' : ctime, 'TEXT' : def_ok})
 
 def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
-    ''' read_csv
+    ''' csv_to_sql
     arguments: 
         fname : Path to .csv file
         con : connection object
@@ -27,7 +28,6 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
     returns: 
         n : number of rows read
     '''
-
     cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table};'")
     texists = cur.fetchone()
     n = 0
@@ -61,7 +61,7 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
         cur.executescript(insertCommand)
 
     return len(data_out)
-        
+
 
 class Sched_db:
     def __init__(self, f_yaml : str, cur : sqlite3.Cursor):
@@ -79,7 +79,6 @@ class Sched_db:
             queryText = ''.join(f.readlines())
         return queryText
 
-    
     def dotest(self):
         self.cursor.execute('SELECT COUNT(*) FROM calendar')
         n = self.cursor.fetchone()
@@ -92,7 +91,7 @@ class Sched_db:
         rows = self.cursor.fetchall()
         for v in rows:
             print(f'OUT: {v}')
-    
+
     def dayBells(self, date):
         queryText = self.getDefaultScript()
         queryText = queryText.replace("REPDATE",date)
@@ -100,25 +99,48 @@ class Sched_db:
         rows = self.cursor.fetchall()
         # -- WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
         rows = [{'date':row[0], 'classTime':row[1], 'classDismissTime':row[2],
-                 'offset':row[3],'end':bool(row[4]), 'signal':row[5], 'file':row[6],
+                 'offset':row[3],'end':bool(row[4]), 'signal':row[5], 'file': row[6],
                  'period':row[7], 'cName':row[8], 'section':row[9],'lesson':row[10]} 
                         for row in rows]
         return(rows)
-    
+
     def bellTime(self, bell):
         bellTime = bell['classDismissTime'] if bell['end'] else bell['classTime']
-        bellOffset = timedelta(minutes=-bell['offset'] if bell['end'] else bell['offset'])
+        bellOffset = timedelta(minutes=(-1 if bell['end'] else 1) * bell['offset'])
         bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M") + bellOffset
-        return dt.strftime(bellDate, "%Y/%m/%d %H:%M:%S")
-    
+        return bellDate
 
+
+def schedule_bell(bell, testonly=False):
+    command = f"vlc --play-and-exit {bell['file']}"
+    with CronTab(user="root") as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
+        job = command.new(command=command)
+        job.setall(bell['datetime'])
+        print(f"{bell['datetime']} {command}")
+        if not testonly:
+            cron.write()
+
+def empty_cron():
+    with CronTab(user="root") as cron:
+        vlcJobs = cron.find_command("vlc")
+        for job in vlcJobs:
+            cron.remove(job)
+        cron.write()
+
+def playDate(date : dt.date, dB : Sched_db, testonly=False):
+    empty_cron()
+    for bell in dB.dayBells(date):
+        bell['datetime'] = dB.bellTime(bell)
+        schedule_bell(bell, testonly=testonly)
+    
 if __name__ == "__main__":
     con = sqlite3.connect(":memory:")
     cur = con.cursor()
     s = Sched_db(YAML, cur)
-    s.dotest()
+#    s.dotest()
     today = dt.strftime(dt.today(), "%-m/%-d/%Y")
     today="10/10/2022"
+    playDate(dt.strptime(today, "%m/%d/%Y"), s, testonly=True)
     bells = s.dayBells(today)
     for bell in bells:
         print(f"{s.bellTime(bell)} {bell['signal']} {bell['file']}  {bell['cName']} {bell['section']}")

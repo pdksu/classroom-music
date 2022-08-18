@@ -28,24 +28,24 @@ And there needs to be a way to switch schedules when there is a delayed opening 
 All these files can be managed by hand, all are `.csv`.
 ### bell schedule `bells.csv`
 
-`schedule name, period, start-time, end-time`
+`schedule, period, startTime, endTime`
 
 ### teacher schedule `teachers.csv`
 
-`teacher, day-of-week, period begin, period end, room, class name`
+`teacher, weekDay, periodBegin, periodEnd, room, class, section`
 
 
 ### class schedule `class.csv`
 
-`class name, lesson category, bell name, dt, after-start=0/before-end=1`
+`cname, lessontype, signal, dt, end(after-start=0/before-end=1)`
 
 ### music selection `music.csv`
 
-`class name, lesson category, bell name, music fname`
+`cname, lessontype, signal, music fname`
 
 ### calendar `calendar.csv`
 
-`date, bell schedule`
+`Date,Day,full,schedule,classDay,Week,MP,Note`
 
 ## usage
 
