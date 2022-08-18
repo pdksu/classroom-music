@@ -1,3 +1,4 @@
+import argparse
 from crontab import CronTab
 import csv, sqlite3, yaml
 from datetime import datetime as dt
@@ -74,6 +75,19 @@ class Sched_db:
             n=csv_to_sql(Path(self.dir,f), cur, t)
             print(f'{t} has {n} rows')
     
+    def list(self):
+        print(f'{__file__}:\nSchedules are in {self.dir}')
+        q1 = "SELECT DISTINCT teacher FROM teachers;"
+        self.cursor.execute(q1)
+        results = self.cursor.fetchall()
+        for (i,result) in enumerate(results):
+            print(f'Teacher {i+1}: {result[0]}')
+        q2 = "SELECT DISTINCT schedule FROM bells;"
+        self.cursor.execute(q2)
+        results = self.cursor.fetchall()
+        for (i,result) in enumerate(results):
+            print(f'Bell Schedule {i+1}: {result[0]}')
+
     def getDefaultScript(self):
         with open(self.script, 'r') as f:
             queryText = ''.join(f.readlines())
@@ -112,7 +126,7 @@ class Sched_db:
 
 
 def schedule_bell(bell, testonly=False):
-    command = f"vlc --play-and-exit {bell['file']}"
+    command = f"cvlc --play-and-exit {bell['file']}"
     with CronTab(user="root") as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
         job = cron.new(command=command)
         job.setall(bell['datetime'])
@@ -122,7 +136,7 @@ def schedule_bell(bell, testonly=False):
 
 def empty_cron():
     with CronTab(user="root") as cron:
-        vlcJobs = cron.find_command("vlc")
+        vlcJobs = cron.find_command("cvlc")
         for job in vlcJobs:
             cron.remove(job)
         cron.write()
@@ -132,15 +146,49 @@ def playDate(date : str, dB : Sched_db, testonly=False):
     for bell in dB.dayBells(date):
         bell['datetime'] = dB.bellTime(bell)
         schedule_bell(bell, testonly=testonly)
-    
-if __name__ == "__main__":
+
+def show_cron():
+    with CronTab(user="root") as cron:
+        for job in cron:
+            print(job)
+
+def getargs(args=None):
+    parser = argparse.ArgumentParser(description="CRON music scheduler for school")
+    parser.add_argument('-i','--initialize',help='install program in CRON for daily updates', default=False, action='store_true')
+    parser.add_argument('-o','--overide',help='use a date other than today format "m/d/Y"', default=None)
+    parser.add_argument('-b','--bellschedule',help='override schedule on calendar', default=None)
+    parser.add_argument('-l','--list',help='show location of data and list available schedules and teachers', default=False, action='store_true')
+    parser.add_argument('-t','--test',help='run and print new bells, but do not schedule', default=False, action='store_true')
+    parser.add_argument('-c','--cronList',help='show list of existing cron jobs', default=False, action='store_true')
+    args = parser.parse_args(args=args)
+    return(args)
+
+def run(args=getargs(), testonly=False):
+    print(f'ARGS: {args}')
     con = sqlite3.connect(":memory:")
     cur = con.cursor()
     s = Sched_db(YAML, cur)
-#    s.dotest()
-    today = dt.strftime(dt.today(), "%-m/%-d/%Y")
-    today="10/10/2022"
-    playDate(today, s, testonly=True)
+    if args.list:
+        s.list()
+        return
+    if args.overide:
+        today=args.overide
+    else:
+        today = dt.strftime(dt.today(), "%-m/%-d/%Y")
     bells = s.dayBells(today)
-    for bell in bells:
-        print(f"{s.bellTime(bell)} {bell['signal']} {bell['file']}  {bell['cName']} {bell['section']}")
+    if args.bellschedule:
+        def newsignal(sd : dict, sig : str):
+            sd['signal'] = sig
+            return(sd)
+        bells = [newsignal(bell, args.bellschedule) for bell in bells]
+    if bells:
+        empty_cron()
+        for bell in bells:
+            bell['datetime'] = s.bellTime(bell)
+            schedule_bell(bell, testonly=args.test)
+    if args.cron:
+        show_cron()
+
+
+if __name__ == "__main__":
+    run()
