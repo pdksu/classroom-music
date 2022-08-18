@@ -1,5 +1,6 @@
 import csv, sqlite3, yaml
 from datetime import datetime as dt
+from datetime import timedelta
 from time import strftime, strptime
 from typing import OrderedDict
 from pathlib import Path
@@ -97,6 +98,7 @@ class Sched_db:
         queryText = queryText.replace("REPDATE",date)
         self.cursor.execute(queryText)
         rows = self.cursor.fetchall()
+        # -- WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
         rows = [{'date':row[0], 'classTime':row[1], 'classDismissTime':row[2],
                  'offset':row[3],'end':bool(row[4]), 'signal':row[5], 'file':row[6],
                  'period':row[7], 'cName':row[8], 'section':row[9],'lesson':row[10]} 
@@ -104,8 +106,10 @@ class Sched_db:
         return(rows)
     
     def bellTime(self, bell):
-        bellDate = strftime(bell['date'],"%-m/%-d/%Y")
-        bellTime = ... [if else]
+        bellTime = bell['classDismissTime'] if bell['end'] else bell['classTime']
+        bellOffset = timedelta(minutes=-bell['offset'] if bell['end'] else bell['offset'])
+        bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M") + bellOffset
+        return dt.strftime(bellDate, "%Y/%m/%d %H:%M:%S")
     
 
 if __name__ == "__main__":
@@ -117,4 +121,4 @@ if __name__ == "__main__":
     today="10/10/2022"
     bells = s.dayBells(today)
     for bell in bells:
-        print(bell)
+        print(f"{s.bellTime(bell)} {bell['signal']} {bell['file']}  {bell['cName']} {bell['section']}")
