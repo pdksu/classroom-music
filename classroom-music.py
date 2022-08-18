@@ -114,7 +114,7 @@ class Sched_db:
 def schedule_bell(bell, testonly=False):
     command = f"vlc --play-and-exit {bell['file']}"
     with CronTab(user="root") as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
-        job = command.new(command=command)
+        job = cron.new(command=command)
         job.setall(bell['datetime'])
         print(f"BELL SCHEDULE: {bell['datetime']} {command}")
         if not testonly:
