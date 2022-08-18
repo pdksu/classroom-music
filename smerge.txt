@@ -1,4 +1,4 @@
-SELECT c.Date, t.periodBegin, b.startTime, t.class, t.section, l.lessontype, l.signal, l.dt, l.end, m.music 
+SELECT c.Date, b.startTime, b.endTime, l.dt, l.end, l.signal, m.music, t.periodBegin,  t.class, t.section, l.lessontype
     FROM calendar as c 
     CROSS JOIN teachers as t
         ON c.DAY = t.weekDay
@@ -8,4 +8,4 @@ SELECT c.Date, t.periodBegin, b.startTime, t.class, t.section, l.lessontype, l.s
         ON l.cname = t.class
     LEFT JOIN music as m 
         ON l.signal = m.signal AND l.cname = m.cname
-    WHERE c.DATE = "9/8/2022";
+    WHERE c.DATE = "REPDATE";
