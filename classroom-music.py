@@ -114,8 +114,8 @@ class Sched_db:
         rows = self.cursor.fetchall()
         # -- WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
         rows = [{'date':row[0], 'classTime':row[1], 'classDismissTime':row[2],
-                 'offset':row[3],'end':bool(row[4]), 'signal':row[5], 
-                 'file': Path(self.muisc_dir,row[6]),
+                 'offset':row[3],'end':bool(row[4]), 'signal':row[5],
+                 'file': Path(self.music_dir,row[6]),
                  'period':row[7], 'cName':row[8], 'section':row[9],'lesson':row[10]} 
                         for row in rows]
         return(rows)
