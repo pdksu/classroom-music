@@ -107,7 +107,7 @@ class Sched_db:
     def bellTime(self, bell):
         bellTime = bell['classDismissTime'] if bell['end'] else bell['classTime']
         bellOffset = timedelta(minutes=(-1 if bell['end'] else 1) * bell['offset'])
-        bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M") + bellOffset
+        bellDate = dt.strptime(bell['date']+' '+bellTime,"%m/%d/%Y %H:%M:%S") + bellOffset
         return bellDate
 
 
@@ -116,7 +116,7 @@ def schedule_bell(bell, testonly=False):
     with CronTab(user="root") as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
         job = command.new(command=command)
         job.setall(bell['datetime'])
-        print(f"{bell['datetime']} {command}")
+        print(f"BELL SCHEDULE: {bell['datetime']} {command}")
         if not testonly:
             cron.write()
 
@@ -127,9 +127,9 @@ def empty_cron():
             cron.remove(job)
         cron.write()
 
-def playDate(date : dt.date, dB : Sched_db, testonly=False):
+def playDate(date : str, dB : Sched_db, testonly=False):
     empty_cron()
-    for bell in dB.dayBells(dt.strftime(date,"%-m/-%d/%Y")):
+    for bell in dB.dayBells(date):
         bell['datetime'] = dB.bellTime(bell)
         schedule_bell(bell, testonly=testonly)
     
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 #    s.dotest()
     today = dt.strftime(dt.today(), "%-m/%-d/%Y")
     today="10/10/2022"
-    playDate(dt.strptime(today, "%m/%d/%Y"), s, testonly=True)
+    playDate(today, s, testonly=True)
     bells = s.dayBells(today)
     for bell in bells:
         print(f"{s.bellTime(bell)} {bell['signal']} {bell['file']}  {bell['cName']} {bell['section']}")
