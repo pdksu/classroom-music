@@ -1,6 +1,6 @@
-"""
-A raspberry pi focused, .csv driven, music scheduler.
-Intent is to schedule musical signals through the day.
+"""classroom-music
+A raspberry pi focused, .csv driven, audio signal scheduler.
+Intent is to schedule .mp3 audible signals through the day.
 And to schedule based on a school schedule.
 
 Ideally, if the school schedule changes qualitatively, 
@@ -9,8 +9,9 @@ the program can be reconfigured by revising the .csv files
 with the school calendar and bell schedule without revising
 the script.
 
-requires: python 3.6+, crontab, sqlite3
-pi should have: vlc installed, music downloaded, python3.6+
+Requires: python 3.6+, crontab, sqlite3, virtual environment
+pi should have: vlc installed, music downloaded, python3.6+,
+also, main directory should have a virtual environment called venv
 """
 
 import argparse
@@ -25,13 +26,14 @@ from pathlib import Path
 YAML = "classroom-music.yaml"
 
 def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
-    """
-    csv_to_sql
-    arguments: 
+    """move csv file to sql dbase
+    Parameters
+    ---------- 
         fname : Path to .csv file
         con : connection object
         table : table name
-    returns: 
+    Returns: 
+    -------- 
         n : number of rows read
     """
     #   local helper functions
@@ -84,8 +86,7 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
 
 
 class SchedDB:
-    """
-    class SchedDB
+    """Manages database and queries
     initialize with the name of the yaml file (relative path) and an active cursor to the
     scheduling database
     """
@@ -163,9 +164,7 @@ class SchedDB:
 
 
 class CronScheduler:
-    """
-    class CronScheduler
-    Interface to cron
+    """ Interface to cron
     Initialize with yaml file that specified runtime and cronuser
     """
     def __init__(self, yamlfile : str):

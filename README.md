@@ -3,7 +3,7 @@ Raspberry Pi scheduler to set musical queues based on bell schedule and teacher 
 
 # Approach
 
-A simple way ti make a scheduling player on the Pi was suggested by [J. Bowman](https://gist.github.com/gitblight1) in a [gist](https://gist.github.com/gitblight1/602f0a73672822c1ef6b056ff35ea293), use [vlc](https://www.videolan.org/vlc/), which comes with a command line interface `cvlc` that is [documented here](https://wiki.videolan.org/Documentation:Streaming_HowTo/Command_Line_Examples/) and also maybe [here](https://openbase.com/js/cvlc/documentation).
+A simple way to make a scheduling player on the Pi was suggested by [J. Bowman](https://gist.github.com/gitblight1) in a [gist](https://gist.github.com/gitblight1/602f0a73672822c1ef6b056ff35ea293): use [vlc](https://www.videolan.org/vlc/), which comes with a command line interface `cvlc` that is [documented here](https://wiki.videolan.org/Documentation:Streaming_HowTo/Command_Line_Examples/) and also maybe [here](https://openbase.com/js/cvlc/documentation).
 
 The key command is:
 
@@ -13,7 +13,7 @@ cvlc --play-and-exit fname
 
 To test successful scheduling, use `crontab -l` and to manually check the player, edit the cronfile with `crontab -e`.
 
-For my purposes, this is a python program to schedule multiple short musical signals or interludes. It figures out the timing based on a set of .csv files that can be merged to build a schedule.
+For my purposes, this is a python program to schedule multiple short musical signals. It calculates the timing using on a set of .csv files that can be merged to build a schedule.
 
 ## Scheduling basics
 
