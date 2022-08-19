@@ -209,8 +209,9 @@ class CronScheduler:
     def initialize(self):
         """ insert command into cronfile that will automatically generate the days bells """
         with CronTab(user=self.CRONUSER) as cron:
-            PYTHON = Path(Path(__file__).parent.resolve(),"venv/bin/python")
-            command = f"{PYTHON} {Path(__file__)}"
+            root_path = Path(__file__).parent.resolve()
+            PYTHON = Path(root_path, "venv/bin/python")
+            command = f"{PYTHON} {Path(root_path, Path(__file__))}"
             job = cron.new(command=command)
             job.setall(f'{self.AMRUNTIME[1]} {self.AMRUNTIME[0]} * * *')
             cron.write()
