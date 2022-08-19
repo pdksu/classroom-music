@@ -194,7 +194,7 @@ def getargs(args=None):
 def run(args=getargs(), testonly=False):
     sched_db = sqlite3.connect(":memory:")
     sched_db_cursor = sched_db.cursor()
-    sched_builder = Sched_db(args.yaml, sched_db_cursor)
+    sched_builder = Sched_db(args.yamlfile, sched_db_cursor)
     scheduler = CronScheduler(args.yamlfile)
 
     if args.initialize:
