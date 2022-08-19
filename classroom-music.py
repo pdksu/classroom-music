@@ -93,7 +93,7 @@ class Sched_db:
             print(f'Bell Schedule {i+1}: {result[0]}')
 
     def getDefaultScript(self):
-        with open(self.script, 'r') as f:
+        with open(Path(Path(__file__).parent.resolve(),self.script), 'r') as f:
             queryText = ''.join(f.readlines())
         return queryText
 
@@ -101,7 +101,7 @@ class Sched_db:
         self.cursor.execute('SELECT COUNT(*) FROM calendar')
         n = self.cursor.fetchone()
         print(f'found {n[0]} rows in calendar')
-        with open(self.script, 'r') as f:
+        with open(Path(Path(__file__).parent.resolve(),self.script), 'r') as f:
             queryText = ''.join(f.readlines())
         queryText = queryText.replace("REPDATE","9/8/2022")
         print(queryText)
