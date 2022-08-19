@@ -83,9 +83,9 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
     return len(data_out)
 
 
-class Sched_db:
+class SchedDB:
     """
-    class Sched_db
+    class SchedDB
     initialize with the name of the yaml file (relative path) and an active cursor to the
     scheduling database
     """
@@ -121,7 +121,7 @@ class Sched_db:
             queryText = ''.join(f.readlines())
         return queryText
 
-    def dotest(self):
+    def doTest(self):
         self.cursor.execute('SELECT COUNT(*) FROM calendar')
         n = self.cursor.fetchone()
         print(f'found {n[0]} rows in calendar')
@@ -173,7 +173,7 @@ class CronScheduler:
         self.AMRUNTIME = (y['runtime']['hour'], y['runtime']['minute'])
         self.CRONUSER = y['user']
 
-    def schedule_bell(self, bell, testonly=False):
+    def scheduleBell(self, bell, testonly=False):
         """ add a line to the cron file """
         command = f"cvlc --play-and-exit {bell['file']}"
         if not bell['datetime']:
@@ -185,7 +185,7 @@ class CronScheduler:
                 if not testonly:
                     cron.write()
 
-    def empty_cron(self):
+    def emptyCron(self):
         """ clear out yesterday's cron events, keep the cron file short-ish """
         with CronTab(user=self.CRONUSER) as cron:
             vlcJobs = cron.find_command("vlc")
@@ -193,21 +193,21 @@ class CronScheduler:
                 cron.remove(job)
             cron.write()
 
-    def playDate(self, date : str, dB : Sched_db, testonly=False):
+    def playDate(self, date : str, dB : SchedDB, testonly=False):
         """ generate all the bells for a day """
-        self.empty_cron()
+        self.emptyCron()
         for bell in dB.dayBells(date):
             bell['datetime'] = dB.bellTime(bell)
             if bell['datetime']:
-                self.schedule_bell(bell, testonly=testonly)
+                self.scheduleBell(bell, testonly=testonly)
 
-    def show_cron(self):
+    def showCron(self):
         """ it's easier to use the command line crontab -l """
         with CronTab(user=self.CRONUSER) as cron:
             for job in cron:
                 print(job)
 
-    def initialize_me(self):
+    def initialize(self):
         """ insert command into cronfile that will automatically generate the days bells """
         with CronTab(user=self.CRONUSER) as cron:
             PYTHON = Path(Path(__file__).parent.resolve(),"venv/bin/python")
@@ -232,7 +232,7 @@ def getargs(args=None):
 def run(args=getargs(), testonly=False):
     sched_db = sqlite3.connect(":memory:") # initialize dB
     sched_db_cursor = sched_db.cursor()
-    sched_builder = Sched_db(args.yamlfile, sched_db_cursor) # generate dB from .csv files
+    sched_builder = SchedDB(args.yamlfile, sched_db_cursor) # generate dB from .csv files
     scheduler = CronScheduler(args.yamlfile) # cron interface
 
     if args.initialize:
@@ -253,12 +253,12 @@ def run(args=getargs(), testonly=False):
             return(sd)
         bells = [newsignal(bell, args.bellschedule) for bell in bells]
     if bells:
-        scheduler.empty_cron()
+        scheduler.emptyCron()
         for bell in bells:
             bell['datetime'] = sched_builder.bellTime(bell)
-            scheduler.schedule_bell(bell, testonly=args.test)
+            scheduler.scheduleBell(bell, testonly=args.test)
     if args.cronList:
-        scheduler.show_cron()
+        scheduler.showCron()
 
 if __name__ == "__main__":
     run()
