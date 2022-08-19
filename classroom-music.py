@@ -235,7 +235,7 @@ def run(args=getargs(), testonly=False):
     scheduler = CronScheduler(args.yamlfile) # cron interface
 
     if args.initialize:
-        scheduler.initialize_me()
+        scheduler.initialize()
         return
     print(f'ARGS: {args}')
     if args.list:
