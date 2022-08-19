@@ -8,6 +8,7 @@ from typing import OrderedDict
 from pathlib import Path
 
 YAML = "classroom-music.yaml"
+CRONUSER = "pi"
 
 def ctime(text : str):
     return strptime(text, "%H:%M")
@@ -133,7 +134,7 @@ class Sched_db:
 
 def schedule_bell(bell, testonly=False):
     command = f"cvlc --play-and-exit {bell['file']}"
-    with CronTab(user="pi") as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
+    with CronTab(user=CRONUSER) as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
         try:
             print(f"BELL SCHEDULE: {bell['datetime']} {command}")
             job = cron.new(command=command)
@@ -144,7 +145,7 @@ def schedule_bell(bell, testonly=False):
             print('WARNING skipping bell')
 
 def empty_cron():
-    with CronTab(user="pi") as cron:
+    with CronTab(user=CRONUSER) as cron:
         vlcJobs = cron.find_command("vlc")
         for job in vlcJobs:
             cron.remove(job)
@@ -158,7 +159,7 @@ def playDate(date : str, dB : Sched_db, testonly=False):
             schedule_bell(bell, testonly=testonly)
 
 def show_cron():
-    with CronTab(user="pi") as cron:
+    with CronTab(user=CRONUSER) as cron:
         for job in cron:
             print(job)
 
