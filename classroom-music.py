@@ -18,7 +18,7 @@ from crontab import CronTab
 import csv, sqlite3, yaml
 from datetime import datetime as dt
 from datetime import timedelta
-from time import strftime, strptime
+from time import strptime
 from typing import OrderedDict
 from pathlib import Path
 
