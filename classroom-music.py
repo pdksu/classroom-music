@@ -135,8 +135,8 @@ class Sched_db:
 
 
 class CronScheduler:
-    def __init__(self, yaml : str):
-        y = yaml.safe_load_all(Path(Path(__file__).parent.resolve(),yaml).read_text()).__next__()
+    def __init__(self, yamlfile : str):
+        y = yaml.safe_load_all(Path(Path(__file__).parent.resolve(),yamlfile).read_text()).__next__()
         self.AMRUNTIME = (y['runtime']['hour'], y['runtime']['minute'])
         self.CRONUSER = y['user']
 
