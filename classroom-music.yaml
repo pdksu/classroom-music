@@ -1,10 +1,18 @@
 #  configuration for music player program
 #
 # --- structure ---
-#   directory: location of files
+#   user: rapsberry pi user name
+#   runtime: hour: minute:  time in the morning to run the scheduler
+#   merge: file name containing sql to perform the merge that will generate a schedule 
+#   directory: location of csv files (relative to program directory)
+#   music: absolute path of directory where music is found
 #   objects: list of csv files in the directory
 #       class name: file name
-#   merge: file name containing sql to perform the merge that will generate a schedule 
+user: pix
+runtime:
+    hour: 7
+    minute: 10
+merge: smerge.txt
 directory: sched2022
 music: /home/pi/Music
 objects:
@@ -13,4 +21,3 @@ objects:
     classes: class.csv
     music: music.csv
     calendar: Clifton2022_calendar.csv
-merge: smerge.txt

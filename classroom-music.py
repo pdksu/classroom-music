@@ -8,18 +8,6 @@ from typing import OrderedDict
 from pathlib import Path
 
 YAML = "classroom-music.yaml"
-CRONUSER = "pi"
-
-def ctime(text : str):
-    return strptime(text, "%H:%M")
-
-def cdate(text : str):
-    return strptime(text, "%m:%D:%Y")
-
-def def_ok(x):
-    return True
-
-SQLtypes = OrderedDict({'INTEGER' : int, 'REAL' : float, 'DATE' : cdate, 'TIME' : ctime, 'TEXT' : def_ok})
 
 def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
     ''' csv_to_sql
@@ -30,6 +18,20 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
     returns: 
         n : number of rows read
     '''
+    #   local helper functions
+    def ctime(text : str):
+        ''' throw error if text is not a time '''
+        return strptime(text, "%H:%M")
+
+    def cdate(text : str):
+        ''' throw error if text is not a date'''
+        return strptime(text, "%m:%D:%Y")
+
+    def def_ok(x):
+        return True
+
+    SQLtypes = OrderedDict({'INTEGER' : int, 'REAL' : float, 'DATE' : cdate, 'TIME' : ctime, 'TEXT' : def_ok})
+
     cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table};'")
     texists = cur.fetchone()
     n = 0
@@ -132,35 +134,49 @@ class Sched_db:
         return bellDate
 
 
-def schedule_bell(bell, testonly=False):
-    command = f"cvlc --play-and-exit {bell['file']}"
-    if not bell['datetime']:
-        return
-    print(f"BELL SCHEDULE: {bell['datetime']} {command}")
-    with CronTab(user=CRONUSER) as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
+class CronScheduler:
+    def __init__(self, yaml : str):
+        y = yaml.safe_load_all(Path(Path(__file__).parent.resolve(),yaml).read_text()).__next__()
+        self.AMRUNTIME = (y['runtime']['hour'], y['runtime']['minute'])
+        self.CRONUSER = y['user']
+
+    def schedule_bell(self, bell, testonly=False):
+        command = f"cvlc --play-and-exit {bell['file']}"
+        if not bell['datetime']:
+            return
+        print(f"BELL SCHEDULE: {bell['datetime']} {command}")
+        with CronTab(user=self.CRONUSER) as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
+                job = cron.new(command=command)
+                job.setall(bell['datetime'])
+                if not testonly:
+                    cron.write()
+
+    def empty_cron(self):
+        with CronTab(user=self.CRONUSER) as cron:
+            vlcJobs = cron.find_command("vlc")
+            for job in vlcJobs:
+                cron.remove(job)
+            cron.write()
+
+    def playDate(self, date : str, dB : Sched_db, testonly=False):
+        self.empty_cron()
+        for bell in dB.dayBells(date):
+            bell['datetime'] = dB.bellTime(bell)
+            if bell['datetime']:
+                self.schedule_bell(bell, testonly=testonly)
+
+    def show_cron(self):
+        with CronTab(user=self.CRONUSER) as cron:
+            for job in cron:
+                print(job)
+
+    def initialize_me(self):
+        with CronTab(user=self.CRONUSER) as cron:
+            PYTHON = Path(Path(__file__).parent.resolve(),"venv/bin/python")
+            command = f"{PYTHON} {__file__}"
             job = cron.new(command=command)
-            job.setall(bell['datetime'])
-            if not testonly:
-                cron.write()
-
-def empty_cron():
-    with CronTab(user=CRONUSER) as cron:
-        vlcJobs = cron.find_command("vlc")
-        for job in vlcJobs:
-            cron.remove(job)
-        cron.write()
-
-def playDate(date : str, dB : Sched_db, testonly=False):
-    empty_cron()
-    for bell in dB.dayBells(date):
-        bell['datetime'] = dB.bellTime(bell)
-        if bell['datetime']:
-            schedule_bell(bell, testonly=testonly)
-
-def show_cron():
-    with CronTab(user=CRONUSER) as cron:
-        for job in cron:
-            print(job)
+            job.setall(f'{self.AMRUNTIME[1]} {self.AMRUNTIME[0]} * * *')
+            cron.write()
 
 def getargs(args=None):
     parser = argparse.ArgumentParser(description="CRON music scheduler for school")
@@ -170,46 +186,41 @@ def getargs(args=None):
     parser.add_argument('-l','--list',help='show location of data and list available schedules and teachers', default=False, action='store_true')
     parser.add_argument('-t','--test',help='run and print new bells, but do not schedule', default=False, action='store_true')
     parser.add_argument('-c','--cronList',help='show list of existing cron jobs', default=False, action='store_true')
+    parser.add_argument('-y','--yamlfile',help=f'specify controlling YAML file ({YAML})', default=YAML)
     args = parser.parse_args(args=args)
     return(args)
 
-def initialize_me():
-    with CronTab(user=CRONUSER) as cron:
-        PYTHON = Path(Path(__file__).parent.resolve(),"venv/bin/python")
-        command = f"{PYTHON} {__file__}"
-        job = cron.new(command=command)
-        job.setall('10 7 * * *')
-        cron.write()
 
 def run(args=getargs(), testonly=False):
+    sched_db = sqlite3.connect(":memory:")
+    sched_db_cursor = sched_db.cursor()
+    sched_builder = Sched_db(args.yaml, sched_db_cursor)
+    scheduler = CronScheduler(args.yamlfile)
+
     if args.initialize:
-        initialize_me()
+        scheduler.initialize_me()
         return
     print(f'ARGS: {args}')
-    con = sqlite3.connect(":memory:")
-    cur = con.cursor()
-    s = Sched_db(YAML, cur)
     if args.list:
-        s.list()
+        sched_builder.list()
         return
     if args.overide:
         today=args.overide
     else:
         today = dt.strftime(dt.today(), "%-m/%-d/%Y")
-    bells = s.dayBells(today)
+    bells = sched_builder.dayBells(today)
     if args.bellschedule:
         def newsignal(sd : dict, sig : str):
             sd['signal'] = sig
             return(sd)
         bells = [newsignal(bell, args.bellschedule) for bell in bells]
     if bells:
-        empty_cron()
+        scheduler.empty_cron()
         for bell in bells:
-            bell['datetime'] = s.bellTime(bell)
-            schedule_bell(bell, testonly=args.test)
+            bell['datetime'] = sched_builder.bellTime(bell)
+            scheduler.schedule_bell(bell, testonly=args.test)
     if args.cronList:
-        show_cron()
-
+        scheduler.show_cron()
 
 if __name__ == "__main__":
     run()
