@@ -1,5 +1,3 @@
-#!/home/pi/code/classroom-music/venv/bin/python
-
 import argparse
 from crontab import CronTab
 import csv, sqlite3, yaml
@@ -177,7 +175,12 @@ def getargs(args=None):
 
 def initialize_me():
     with CronTab(user=CRONUSER) as cron:
-        job = cron.new(command=f"python")
+        PYTHON = Path(Path(__file__).parent.resolve(),"venv/bin/python")
+        command = f"{PYTHON} {__file__}"
+        job = cron.new(command=command)
+        job.setall('10 7 * * *')
+        cron.write()
+
 def run(args=getargs(), testonly=False):
     if args.initialize:
         initialize_me()
