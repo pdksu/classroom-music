@@ -1,3 +1,5 @@
+#!/home/pi/code/classroom-music/venv/bin/python
+
 import argparse
 from crontab import CronTab
 import csv, sqlite3, yaml
@@ -68,8 +70,8 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
 class Sched_db:
     def __init__(self, f_yaml : str, cur : sqlite3.Cursor):
         self.cursor = cur
-        y = yaml.safe_load_all(Path(f_yaml).read_text()).__next__()
-        self.dir = y['directory']
+        y = yaml.safe_load_all(Path(Path(__file__).parent.resolve(),f_yaml).read_text()).__next__()
+        self.dir = Path(Path(__file__).parent.resolve(),y['directory'])
         self.music_dir = y['music']
         self.files = y['objects']
         self.script = y['merge']
@@ -173,7 +175,13 @@ def getargs(args=None):
     args = parser.parse_args(args=args)
     return(args)
 
+def initialize_me():
+    with CronTab(user=CRONUSER) as cron:
+        job = cron.new(command=f"python")
 def run(args=getargs(), testonly=False):
+    if args.initialize:
+        initialize_me()
+        return
     print(f'ARGS: {args}')
     con = sqlite3.connect(":memory:")
     cur = con.cursor()
