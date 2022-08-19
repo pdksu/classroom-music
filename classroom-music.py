@@ -1,3 +1,18 @@
+"""
+A raspberry pi focused, .csv driven, music scheduler.
+Intent is to schedule musical signals through the day.
+And to schedule based on a school schedule.
+
+Ideally, if the school schedule changes qualitatively, 
+e.g. the school implements drop-4 scheduling,
+the program can be reconfigured by revising the .csv files
+with the school calendar and bell schedule without revising
+the script.
+
+requires: python 3.6+, crontab, sqlite3
+pi should have: vlc installed, music downloaded, python3.6+
+"""
+
 import argparse
 from crontab import CronTab
 import csv, sqlite3, yaml
@@ -10,21 +25,22 @@ from pathlib import Path
 YAML = "classroom-music.yaml"
 
 def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
-    ''' csv_to_sql
+    """
+    csv_to_sql
     arguments: 
         fname : Path to .csv file
         con : connection object
         table : table name
     returns: 
         n : number of rows read
-    '''
+    """
     #   local helper functions
     def ctime(text : str):
-        ''' throw error if text is not a time '''
+        """ throw error if text is not a time """
         return strptime(text, "%H:%M")
 
     def cdate(text : str):
-        ''' throw error if text is not a date'''
+        """ throw error if text is not a date """
         return strptime(text, "%m:%D:%Y")
 
     def def_ok(x):
@@ -68,6 +84,11 @@ def csv_to_sql(fname : Path, cur : sqlite3.Cursor, table : str ):
 
 
 class Sched_db:
+    """
+    class Sched_db
+    initialize with the name of the yaml file (relative path) and an active cursor to the
+    scheduling database
+    """
     def __init__(self, f_yaml : str, cur : sqlite3.Cursor):
         self.cursor = cur
         y = yaml.safe_load_all(Path(Path(__file__).parent.resolve(),f_yaml).read_text()).__next__()
@@ -80,6 +101,9 @@ class Sched_db:
             print(f'{t} has {n} rows')
     
     def list(self):
+        """
+        handy method to show user what teachers, classrooms, and bell schedules are available
+        """
         print(f'{__file__}:\nSchedules are in {self.dir}')
         q1 = "SELECT DISTINCT teacher FROM teachers;"
         self.cursor.execute(q1)
@@ -111,11 +135,14 @@ class Sched_db:
             print(f'OUT: {v}')
 
     def dayBells(self, date):
+        """
+        daybells: interrogate database for the musical signals on a date
+        """
         queryText = self.getDefaultScript()
         queryText = queryText.replace("REPDATE",date)
         self.cursor.execute(queryText)
         rows = self.cursor.fetchall()
-        # -- WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
+        # -- TODO WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
         rows = [{'date':row[0], 'classTime':row[1], 'classDismissTime':row[2],
                  'offset':row[3],'end':bool(row[4]), 'signal':row[5],
                  'file': Path(self.music_dir,row[6]),
@@ -124,6 +151,7 @@ class Sched_db:
         return(rows)
 
     def bellTime(self, bell):
+        """ calculate bell timing from signal data """
         bellTime = bell['classDismissTime'] if bell['end'] else bell['classTime']
         bellOffset = timedelta(minutes=(-1 if bell['end'] else 1) * bell['offset'])
         print(f"BELL DEBUG {bell['date']}, {bellTime}, {bellOffset} ===")
@@ -135,12 +163,18 @@ class Sched_db:
 
 
 class CronScheduler:
+    """
+    class CronScheduler
+    Interface to cron
+    Initialize with yaml file that specified runtime and cronuser
+    """
     def __init__(self, yamlfile : str):
         y = yaml.safe_load_all(Path(Path(__file__).parent.resolve(),yamlfile).read_text()).__next__()
         self.AMRUNTIME = (y['runtime']['hour'], y['runtime']['minute'])
         self.CRONUSER = y['user']
 
     def schedule_bell(self, bell, testonly=False):
+        """ add a line to the cron file """
         command = f"cvlc --play-and-exit {bell['file']}"
         if not bell['datetime']:
             return
@@ -152,6 +186,7 @@ class CronScheduler:
                     cron.write()
 
     def empty_cron(self):
+        """ clear out yesterday's cron events, keep the cron file short-ish """
         with CronTab(user=self.CRONUSER) as cron:
             vlcJobs = cron.find_command("vlc")
             for job in vlcJobs:
@@ -159,6 +194,7 @@ class CronScheduler:
             cron.write()
 
     def playDate(self, date : str, dB : Sched_db, testonly=False):
+        """ generate all the bells for a day """
         self.empty_cron()
         for bell in dB.dayBells(date):
             bell['datetime'] = dB.bellTime(bell)
@@ -166,11 +202,13 @@ class CronScheduler:
                 self.schedule_bell(bell, testonly=testonly)
 
     def show_cron(self):
+        """ it's easier to use the command line crontab -l """
         with CronTab(user=self.CRONUSER) as cron:
             for job in cron:
                 print(job)
 
     def initialize_me(self):
+        """ insert command into cronfile that will automatically generate the days bells """
         with CronTab(user=self.CRONUSER) as cron:
             PYTHON = Path(Path(__file__).parent.resolve(),"venv/bin/python")
             command = f"{PYTHON} {__file__}"
@@ -192,10 +230,10 @@ def getargs(args=None):
 
 
 def run(args=getargs(), testonly=False):
-    sched_db = sqlite3.connect(":memory:")
+    sched_db = sqlite3.connect(":memory:") # initialize dB
     sched_db_cursor = sched_db.cursor()
-    sched_builder = Sched_db(args.yamlfile, sched_db_cursor)
-    scheduler = CronScheduler(args.yamlfile)
+    sched_builder = Sched_db(args.yamlfile, sched_db_cursor) # generate dB from .csv files
+    scheduler = CronScheduler(args.yamlfile) # cron interface
 
     if args.initialize:
         scheduler.initialize_me()
