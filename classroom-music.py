@@ -134,15 +134,16 @@ class Sched_db:
 
 def schedule_bell(bell, testonly=False):
     command = f"cvlc --play-and-exit {bell['file']}"
+    try:
+        print(f"BELL SCHEDULE: {bell['datetime']} {command}")
+    except ValueError:
+        print('WARNING skipping bell')
+        return
     with CronTab(user=CRONUSER) as cron:  # cvlc --random --play-and-exit /path/to/your/playlist
-        try:
-            print(f"BELL SCHEDULE: {bell['datetime']} {command}")
             job = cron.new(command=command)
             job.setall(bell['datetime'])
             if not testonly:
                 cron.write()
-        except ValueError:
-            print('WARNING skipping bell')
 
 def empty_cron():
     with CronTab(user=CRONUSER) as cron:
