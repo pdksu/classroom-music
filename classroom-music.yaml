@@ -8,10 +8,10 @@
 #   music: absolute path of directory where music is found
 #   objects: list of csv files in the directory
 #       class name: file name
-user: pix
+user: pi
 runtime:
-    hour: 7
-    minute: 10
+    hour: 12
+    minute: 8
 merge: smerge.txt
 directory: sched2022
 music: /home/pi/Music
