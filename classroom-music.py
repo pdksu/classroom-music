@@ -104,18 +104,17 @@ class SchedDB:
     def list(self):
         """
         handy method to show user what teachers, classrooms, and bell schedules are available
-        """
+        """ 
         print(f'{__file__}:\nSchedules are in {self.dir}')
-        q1 = "SELECT DISTINCT teacher FROM teachers;"
-        self.cursor.execute(q1)
-        results = self.cursor.fetchall()
-        for (i,result) in enumerate(results):
-            print(f'Teacher {i+1}: {result[0]}')
-        q2 = "SELECT DISTINCT schedule FROM bells;"
-        self.cursor.execute(q2)
-        results = self.cursor.fetchall()
-        for (i,result) in enumerate(results):
-            print(f'Bell Schedule {i+1}: {result[0]}')
+        # query tuples are (column heading, table, printed label)
+        qvs = [("teacher", "teachers", "teacher"), 
+                ("schedule", "bells", "Bell schedule"),
+                ("room", "teachers", "room")]
+        for qv in qvs:
+            self.cursor.execute(f"SELECT DISTINCT {qv[0]} FROM {qv[1]};")
+            results = self.cursor.fetchall()
+            for (i,result) in enumerate(results):
+                print(f'{qv[2]} {i+1}: {result[0]}')
 
     def getDefaultScript(self):
         with open(Path(Path(__file__).parent.resolve(),self.script), 'r') as f:
@@ -135,12 +134,12 @@ class SchedDB:
         for v in rows:
             print(f'OUT: {v}')
 
-    def dayBells(self, date):
+    def dayBells(self, date, room):
         """
         daybells: interrogate database for the musical signals on a date
         """
         queryText = self.getDefaultScript()
-        queryText = queryText.replace("REPDATE",date)
+        queryText = queryText.replace("REPDATE",date).replace("ROOMNO", room)
         self.cursor.execute(queryText)
         rows = self.cursor.fetchall()
         # -- TODO WARNING rows = [{ ... }] is highly dependent on smerge.txt --- #
@@ -206,24 +205,25 @@ class CronScheduler:
             for job in cron:
                 print(job)
 
-    def initialize(self):
+    def initialize(self, room : str):
         """ insert command into cronfile that will automatically generate the days bells """
         with CronTab(user=self.CRONUSER) as cron:
             root_path = Path(__file__).parent.resolve()
             PYTHON = Path(root_path, "venv/bin/python")
-            command = f"{PYTHON} {Path(root_path, Path(__file__))}"
+            command = f"{PYTHON} {Path(root_path, Path(__file__))} -r {room}"
             job = cron.new(command=command)
             job.setall(f'{self.AMRUNTIME[1]} {self.AMRUNTIME[0]} * * *')
             cron.write()
 
 def getargs(args=None):
     parser = argparse.ArgumentParser(description="CRON music scheduler for school")
-    parser.add_argument('-i','--initialize',help='install program in CRON for daily updates', default=False, action='store_true')
-    parser.add_argument('-o','--overide',help='use a date other than today format "m/d/Y"', default=None)
     parser.add_argument('-b','--bellschedule',help='override schedule on calendar', default=None)
-    parser.add_argument('-l','--list',help='show location of data and list available schedules and teachers', default=False, action='store_true')
-    parser.add_argument('-t','--test',help='run and print new bells, but do not schedule', default=False, action='store_true')
     parser.add_argument('-c','--cronList',help='show list of existing cron jobs', default=False, action='store_true')
+    parser.add_argument('-i','--initialize',help='install program in CRON for daily updates arg=room number', default=False)
+    parser.add_argument('-l','--list',help='show location of data and list available schedules and teachers', default=False, action='store_true')
+    parser.add_argument('-o','--overide',help='use a date other than today format "m/d/Y"', default=None)
+    parser.add_argument('-r','--room',help='room number', default=None)
+    parser.add_argument('-t','--test',help='run and print new bells, but do not schedule', default=False, action='store_true')
     parser.add_argument('-y','--yamlfile',help=f'specify controlling YAML file ({YAML})', default=YAML)
     args = parser.parse_args(args=args)
     return(args)
@@ -236,7 +236,7 @@ def run(args=getargs(), testonly=False):
     scheduler = CronScheduler(args.yamlfile) # cron interface
 
     if args.initialize:
-        scheduler.initialize()
+        scheduler.initialize(room=args.initialize)
         return
     print(f'ARGS: {args}')
     if args.list:
@@ -246,7 +246,9 @@ def run(args=getargs(), testonly=False):
         today=args.overide
     else:
         today = dt.strftime(dt.today(), "%-m/%-d/%Y")
-    bells = sched_builder.dayBells(today)
+    if not args.room:
+        raise argparse.ArgumentError(message = "room number required to build schedule")
+    bells = sched_builder.dayBells(today, room=args.room)
     if args.bellschedule:
         def newsignal(sd : dict, sig : str):
             sd['signal'] = sig
