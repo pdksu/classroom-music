@@ -89,8 +89,6 @@ to insert a line into the Cronfile that will run the program every morning.
 
 1. Sched_db.daybells : the conversion of query output to a dictionary for scheduling depends on the content of `merge.txt` so if it is edited, this conversion row must be updated in the code.
 
-## ToDo
 
-1. include room numbers and a self-aware room number for the pi.
 
 
